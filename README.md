@@ -1,6 +1,6 @@
 # Open List
 
-Version 1.0
+Version 2.x.1.0
 
 SOAP service handling user list elements in Danish libraries.
 
