@@ -23,5 +23,6 @@ The service can be tested at this location
     
     http://example.com/tools/client/
 
+
 ## Available clients
   * **ting\_open\_list** Drupal client
