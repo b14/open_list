@@ -1,10 +1,11 @@
 <?php
 
 /**
+ * @file
  * Handle list permissions.
  */
-class ListPermission extends Module
-{
+
+class ListPermission extends Module {
   public $version = 1;
 
   /**
@@ -21,9 +22,9 @@ class ListPermission extends Module
       'editList' => 'onListEdit',
     );
   }
-  
+
   /**
-   *
+   * Get alle public lists.
    */
   public function getPublicLists($title = '') {
     $result = DB::q('
@@ -51,7 +52,7 @@ ORDER BY
   }
 
   /**
-   *
+   * On list edited.
    */
   protected function onListEdit($list_id, $title, $data) {
     if (!empty($data['fields'])) {
@@ -71,12 +72,12 @@ VALUES (%list_id, "@permission")
         }
       }
     }
-    
+
     return TRUE;
   }
 
   /**
-   *
+   * On list created.
    */
   protected function onListCreate($insert_id, $owner, $title, $data) {
     if (!empty($data['fields'])) {
@@ -96,7 +97,7 @@ VALUES (%list_id, "@permission")
         }
       }
     }
-    
+
     return TRUE;
   }
 

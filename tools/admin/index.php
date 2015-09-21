@@ -1,15 +1,25 @@
 <?php
 
-require_once(dirname(__FILE__) . '/../../settings.php');
-require_once(OPENLIST_CLASSES_PATH . '/DB.php');
-require_once(OPENLIST_CLASSES_PATH . '/Admin.php');
+/**
+ * @file
+ * Admin tool.
+ */
 
-define('DEFAULT_WSDL', 'http://' . $_SERVER['SERVER_NAME'] .'?wsdl');
+require_once dirname(__FILE__) . '/../../settings.php';
+require_once OPENLIST_CLASSES_PATH . '/DB.php';
+require_once OPENLIST_CLASSES_PATH . '/Admin.php';
 
-// See the client tool [
+define('DEFAULT_WSDL', 'http://' . $_SERVER['SERVER_NAME'] . '?wsdl');
+
+/**
+ * Clean text.
+ */
 function clean($text) {
   return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
 }
+/**
+ * Parse arguments.
+ */
 function parseArgument($argument) {
   if ($argument === '') {
     return;
@@ -22,27 +32,27 @@ function parseArgument($argument) {
       for ($i = 0, $count = count($arguments); $i < $count; $i++) {
         $argument[$i] = parseArgument($arguments[$i]);
       }
-    break;
+      break;
 
     case 'i]':
       $argument = (int) substr($argument, 2);
-    break;
+      break;
 
     case 's]':
       $argument = (string) substr($argument, 2);
-    break;
+      break;
 
     case 'b]':
       $argument = (boolean) substr($argument, 2);
-    break;
+      break;
 
     case 'j]':
       $argument = json_decode(substr($argument, 2), TRUE);
-    break;
+      break;
 
     case 'p]':
       $argument = unserialize(substr($argument, 2));
-    break;
+      break;
   }
 
   return $argument;
@@ -58,32 +68,29 @@ if (isset($_POST['send'])) {
   for ($i = 0, $count = count($arguments); $i < $count; $i++) {
     $arguments[$i] = parseArgument($arguments[$i]);
   }
-  
+
   $dev = (isset($_POST['developer']) ? '&developer=on' : '');
-  
+
   switch ($_POST['send']) {
     case 'Install':
       $url = OPENLIST_URL . '?admin=' . OPENLIST_ADMIN_GET_PASSWORD . $dev . '&install=' . $arguments[0];
       var_dump($url);
       var_dump(file_get_contents($url));
-    break;
+      break;
+
     case 'Uninstall':
       $url = OPENLIST_URL . '?admin=' . OPENLIST_ADMIN_GET_PASSWORD . $dev . '&uninstall=' . $arguments[0];
       var_dump($url);
       var_dump(file_get_contents($url));
-    break;
-    
+      break;
+
     case 'Cron':
       echo file_get_contents(OPENLIST_URL . '?admin=' . OPENLIST_ADMIN_GET_PASSWORD . $dev . '&cron=' . $arguments[0]);
-    break;
-    
+      break;
+
     case 'Normalize':
       Admin::normalizeElements($arguments[0]);
-    break;
-    
-    // case 'Clean':
-      // Admin::clean($arguments[0]);
-    break;
+      break;
   }
 }
 
@@ -132,7 +139,7 @@ b]1</pre>
           </div>
           <textarea id="input-arguments" name="arguments"><?php print isset($_POST['arguments']) ? $_POST['arguments'] : ''; ?></textarea>
         </div>
-        
+
         <div class="form-input">
           <label for="input-as-user">Developer: </label>
           <div class="help">
@@ -152,23 +159,25 @@ b]1</pre>
         <input type="submit" name="send" value="Clean" />
       </form>
     </div>
-    
-    <?php if (!empty($debug_messages)) { ?>
+
+    <?php if (!empty($debug_messages)): ?>
     <div class="section">
       <div class="data">
         <h3>Debug</h3>
         <pre><?php print clean($debug_messages); ?></pre>
       </div>
     </div>
-    <?php } ?>
-    
-    <?php if (!empty($result)) { ?>
+    <?php
+endif; ?>
+
+    <?php if (!empty($result)): ?>
     <div class="section">
       <div class="data">
         <h3>Result</h3>
         <pre><?php print clean($result); ?></pre>
       </div>
     </div>
-    <?php } ?>
+    <?php
+endif; ?>
   </body>
 </html>

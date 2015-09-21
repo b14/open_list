@@ -1,33 +1,48 @@
 <?php
 /**
+ * @file
  * Databse handling
  */
-class DB
-{
-	private static $qCounter = 0;
+
+class DB {
+  private static $qCounter = 0;
 
   private static $history = array();
 
   private static $db;
 
-
-	private function __construct() { }
-
+  /**
+   * Initialize.
+   */
   public static function initialize($host, $user, $pass, $db) {
     // Connect to the database.
-		self::$db = new mysqli($host, $user, $pass, $db);
+    self::$db = new mysqli($host, $user, $pass, $db);
 
     // Make sure the server uses utf8.
     // This is equivalent with the "SET NAMES utf8" sql commando.
     self::$db->set_charset('utf8');
-	}
+  }
 
-  /** Wraps the insert_id variable */
-  public static function insert_id() { return self::$db->insert_id; }
-  /** Wraps the affected_rows variable */
-  public static function affected_rows() { return self::$db->affected_rows; }
-  /** Wraps the errno variable */
-  public static function errno() { return self::$db->errno; }
+  /**
+   * Wraps the insert_id variable.
+   */
+  public static function insert_id() {
+    return self::$db->insert_id;
+  }
+
+  /**
+   * Wraps the affected_rows variable.
+   */
+  public static function affected_rows() {
+    return self::$db->affected_rows;
+  }
+
+  /**
+   * Wraps the errno variable.
+   */
+  public static function errno() {
+    return self::$db->errno;
+  }
 
   /**
    * Get the complete history list, or a single entry.
@@ -35,7 +50,7 @@ class DB
    * If you call this function without any arguments, it will return the latest
    * entry in the history list.
    *
-   * @param $pos
+   * @param int $pos
    *   The position of the history entry you want. In this case the last entry
    *   of the list is 1 (which is default). If you set this to 0 you'll get the
    *   complete list.
@@ -85,25 +100,23 @@ class DB
    */
   private static function parseArgument($key, $argument) {
     switch ($key[0]) {
-      case '@': // mysql escape string.
+      case '@':
         return self::$db->real_escape_string($argument);
-      break;
-      case '%': // integer
+
+      case '%':
         return (int) $argument;
-      break;
-      case '!': // pass through
+
+      case '!':
         return $argument;
-      break;
-      case '?': // an array, which is again parsed by parseArgument.
+
+      case '?':
         foreach ($argument as $sub_key => $value) {
           $argument[$sub_key] = self::parseArgument(substr($key, 1), $value);
         }
         return implode(', ', $argument);
-      break;
-      default:
-        return NULL; // should we return key instead?
-      break;
     }
+
+    return NULL;
   }
 
   /**
@@ -114,7 +127,7 @@ class DB
    * @param array $args
    *   The associated needle => replacement array. See the the parseSQL() and
    *   parseArgument() functions.
-   * @param boolean $multi_query
+   * @param bool $multi_query
    *   If set to true it'll use the multi_query() function instead of the
    *   normal query() function.
    *
@@ -123,7 +136,7 @@ class DB
    *   a mysqli_result class (for SELECTS) and boolean (for UPDATE, DELETE and
    *   any multi query).
    */
-	public static function q($sql, $args = NULL, $multi_query = FALSE) {
+  public static function q($sql, $args = NULL, $multi_query = FALSE) {
     $sqlString = $sql;
     if ($args !== NULL) {
       $sqlString = self::parseSql($sql, $args);
@@ -132,7 +145,8 @@ class DB
     $startTime = microtime(TRUE);
     if (!$multi_query) {
       $result = self::$db->query($sqlString);
-    } else {
+    }
+    else {
       $result = self::$db->multi_query($sqlString);
     }
 
@@ -140,10 +154,10 @@ class DB
       'sql' => $sql,
       'args' => $args,
       'sqlString' => $sqlString,
-      'time' => microtime(TRUE) - $startTime
+      'time' => microtime(TRUE) - $startTime,
     );
 
-		if (!$result) {
+    if (!$result) {
       $backtrace = debug_backtrace();
       self::$history[self::$qCounter]['error'] = array(
         'number' => self::$db->errno,
@@ -151,14 +165,14 @@ class DB
         'backtrace' => array(
           'function' => $backtrace[1]['function'],
           'line' => $backtrace[0]['line'],
-          'arguments' => $backtrace[1]['args']
-        )
+          'arguments' => $backtrace[1]['args'],
+        ),
       );
-		}
+    }
     self::$qCounter++;
 
     return $result;
-	}
+  }
 
   /**
    * If you've used multiple queries, this will get the next result.
@@ -173,8 +187,7 @@ class DB
   }
 
   /**
-   * Clean the result list, which can build up if you're using multiple
-   * queries.
+   * Clean the result list..
    */
   public static function clearResults() {
     if (!self::$db->more_results()) {

@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Default settings file. Rename to settings.php
+ */
+
 define('OPENLIST_ADMIN_GET_PASSWORD', 'asdfxyz');
 
 /**
@@ -20,7 +25,7 @@ define('DB_PASSWORD', 'password');
 define('DB_DATABASE', 'databasename');
 
 
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------
 
 /**
  * The local root of the openlist.

@@ -1,10 +1,10 @@
 <?php
 
 /**
+ * @file
  * A simple event handler class.
- *
- *
  */
+
 class EventHandler {
   /**
    * The array holding all the listener functions.
@@ -17,7 +17,9 @@ class EventHandler {
   /**
    * A private constructor.
    */
-  private function __construct() { }
+  private function __construct() {
+
+  }
 
   /**
    * Add a listener to an event.
@@ -38,14 +40,14 @@ class EventHandler {
     if (!isset(self::$listeners[$name])) {
       return;
     }
-    
+
     $call_list = array();
     foreach (self::$listeners[$name] as $priority_list) {
       foreach ($priority_list as $function_name => $listener) {
         $call_list[$function_name] = call_user_func_array($listener, $args);
       }
     }
-    
+
     return $call_list;
   }
 }

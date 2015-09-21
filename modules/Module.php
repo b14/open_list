@@ -1,12 +1,17 @@
 <?php
+
+/**
+ * @file
+ * Bas emodule
+ */
+
 /**
  * The base class for a module.
  *
  * We extends the EventHandler so we can use protected functions for all
  * methods connect to an event.
  */
-abstract class Module extends EventHandler
-{
+abstract class Module extends EventHandler {
   /**
    * An array holding all the modules.
    */
@@ -38,8 +43,7 @@ abstract class Module extends EventHandler
   }
 
   /**
-   * Get the events from the getEvents() function, and add the listeners to
-   * the EventHandler.
+   * Get the events from the getEvents() function.
    */
   private function setupEvents() {
     $events = $this->getEvents();
@@ -47,7 +51,7 @@ abstract class Module extends EventHandler
       EventHandler::addListener($event, array($this, $listener));
     }
   }
-  
+
   /**
    * Return a module object depending on the module name.
    *
@@ -61,7 +65,7 @@ abstract class Module extends EventHandler
     if (isset(self::$modules[$module_name])) {
       return self::$modules[$module_name];
     }
-    
+
     return FALSE;
   }
 
@@ -72,19 +76,19 @@ abstract class Module extends EventHandler
    * easily can be identified, but as an added bonus you wont be able to call
    * every method using this admin function.
    *
-   * @param string $method
-   *   The method to call (without the underscore).
    * @param string $module_name
    *   The exact module name, to call the method on.
+   * @param string $method
+   *   The method to call (without the underscore).
    *
    * @return mixed
-   *   The data returned from the admin function. 
+   *   The data returned from the admin function.
    */
   public final static function admin($module_name, $method) {
     if (isset(self::$modules[$module_name])) {
       $module = self::$modules[$module_name];
       $method = '_' . $method;
-      
+
       if (method_exists($module, $method)) {
         return call_user_func_array(array($module, $method), array());
       }

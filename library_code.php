@@ -1,7 +1,12 @@
 <?php
 
+/**
+ * @file
+ * List of allowed livrary codes.
+ */
+
 $GLOBALS['library_code'] = isset($_COOKIE['library_code']) ?
-  $_COOKIE['library_code'] : (isset($_GET['library_code']) ? 
+  $_COOKIE['library_code'] : (isset($_GET['library_code']) ?
     $_GET['library_code'] : (isset($_GET['admin']) ?
       'admin' : FALSE));
 

@@ -1,18 +1,21 @@
 <?php
 
-//
-// Another way of handling the weighted list.
-// http://stackoverflow.com/questions/2453964/mysql-procedure-to-update-numeric-reference-in-previous-rows-when-one-is-updated
+/**
+ * @file
+ * Primary class.
+ */
 
-class OpenList
-{
+class OpenList {
   /**
    * The span between weights.
    */
   const WEIGHT_SPAN = 32;
-  
+
   public static $instance = NULL;
 
+  /**
+   * Constructor.
+   */
   public function __construct() {
     self::$instance = $this;
   }
@@ -20,7 +23,7 @@ class OpenList
   /**
    * A simple check if all arguments exists or throw an error function.
    *
-   * @param array $args 
+   * @param array $args
    *   An associative array with the argument name => argument value.
    */
   private static function errorCheckArguments($args) {
@@ -41,13 +44,13 @@ class OpenList
    *
    * @param string $msg
    *   The custom message given to the client.
-   * @param boolean $log_it
-   *   If true the error message and the last database query will be saved
+   * @param bool $log_it
+   *   If TRUE the error message and the last database query will be saved
    *   to the errorlog table.
    */
-  private static function error($msg = '', $log_it = false) {
+  private static function error($msg = '', $log_it = FALSE) {
     EventHandler::trigger(__FUNCTION__, array($msg, $log_it));
-    
+
     if ($msg === '') {
       $msg = 'Unknown error.';
     }
@@ -61,7 +64,7 @@ INSERT INTO errorlog
 VALUES ("@msg", "@sql", "openlist")
       ', array(
         '@msg' => $msg,
-        '@sql' => serialize(DB::getHistory())
+        '@sql' => serialize(DB::getHistory()),
       ));
 
       // The user will get the id of the error in our error log. This way we
@@ -69,27 +72,27 @@ VALUES ("@msg", "@sql", "openlist")
       // someones error.
       $msg = '[issue_id: ' . DB::insert_id() . '] ' . $msg;
     }
-    
+
     trigger_error($msg, E_USER_ERROR);
   }
 
   /**
    * Set the default value to a variable.
    *
-   * @param $variable
+   * @param mixed $variable
    *   The variable.
-   * @param $value
+   * @param mixed $value
    *   The default value.
    */
   private static function setDefault(&$variable, $value) {
-    if ($variable === null) {
+    if ($variable === NULL) {
       $variable = $value;
     }
   }
-  
+
   /**
-   * Update the user_provider table, so we know which users come from what
-   * library.
+   * Update the user_provider table.
+   *
    * @param string $owner
    *   The user.
    */
@@ -100,7 +103,7 @@ INSERT IGNORE INTO user_provider
 VALUES ("@owner", "@library_code")
     ', array(
       '@owner' => $owner,
-      '@library_code' => $GLOBALS['library_code']
+      '@library_code' => $GLOBALS['library_code'],
     ));
   }
 
@@ -125,7 +128,8 @@ VALUES ("@owner", "@library_code")
         self::setDefault($args, array());
         try {
           return call_user_func_array(array($module, $method), $args);
-        } catch (Exception $e) {
+        }
+        catch (Exception $e) {
           self::error($e->getMessage(), TRUE);
         }
       }
@@ -139,17 +143,18 @@ VALUES ("@owner", "@library_code")
   /**
    * Create an element, and attach it to a list.
    *
-   * @param integer $element_id
+   * @param int $element_id
    *   The element id.
    * @param mixed $data
    *   The data you wish to save (this can be anything, it's serialized before
    *   saved to the database).
    *
-   * @return boolean
+   * @return bool
+   *   Result.
    */
   public function editElement($element_id, $data) {
     self::errorCheckArguments(array(
-      'element_id' => $element_id
+      'element_id' => $element_id,
     ));
 
     $result = DB::q('
@@ -159,64 +164,56 @@ WHERE element_id = %element_id
     ', array(
       '%element_id' => $element_id,
       '@data' => serialize($data),
-      '@library_code' => $GLOBALS['library_code']
+      '@library_code' => $GLOBALS['library_code'],
     ));
 
     if ($result) {
-      // if (DB::affected_rows() === 0) {
-        // return self::error('Unknown element id (' . $element_id . ')');
-      // }
-
       EventHandler::trigger(__FUNCTION__, array($element_id, $data));
       return $result;
     }
 
-    self::error('', true);
+    self::error('', TRUE);
   }
 
   /**
    * Create an element, and attach it to a list.
    *
-   * @param integer $list_id
+   * @param int $list_id
    *   The list id.
    * @param string $title
    *   The new title.
    * @param mixed $data
    *   Data to save about the list.
    *
-   * @return boolean
-   *
+   * @return bool
+   *   Update result.
    */
-  public function editList($list_id, $title, $data = null) {
+  public function editList($list_id, $title, $data = NULL) {
     self::errorCheckArguments(array(
-      'list_id' => $list_id
+      'list_id' => $list_id,
     ));
 
-    if ($data !== null) {
+    if ($data !== NULL) {
       $extra_setter = ', data ="@data"';
     }
 
     $result = DB::q('
 UPDATE lists
-SET title = "@title", library_code = "@library_code", modified = UNIX_TIMESTAMP()'. $extra_setter . '
+SET title = "@title", library_code = "@library_code", modified = UNIX_TIMESTAMP()' . $extra_setter . '
 WHERE list_id = %list_id
     ', array(
       '%list_id' => $list_id,
       '@title' => $title,
       '@data' => serialize($data),
-      '@library_code' => $GLOBALS['library_code']
+      '@library_code' => $GLOBALS['library_code'],
     ));
 
     if ($result) {
-      // if (DB::affected_rows() === 0) {
-        // return self::error('Unknown list id (' . $list_id . ')');
-      // }
-
       EventHandler::trigger(__FUNCTION__, array($list_id, $title, $data));
       return $result;
     }
 
-    self::error('', true);
+    self::error('', TRUE);
   }
 
   /**
@@ -238,9 +235,9 @@ WHERE list_id = %list_id
 
     self::errorCheckArguments(array(
       'owner' => $owner,
-      'title' => $title
+      'title' => $title,
     ));
-    
+
     self::updateUserProvider($owner);
 
     $result = DB::q('
@@ -252,24 +249,29 @@ VALUES ("@owner", "@title", "@type", UNIX_TIMESTAMP(), "@data", "@library_code")
       '@title' => $title,
       '@type' => $type,
       '@data' => serialize($data),
-      '@library_code' => $GLOBALS['library_code']
+      '@library_code' => $GLOBALS['library_code'],
     ));
 
     if ($result) {
       $insert_id = DB::insert_id();
 
-      EventHandler::trigger(__FUNCTION__, array($insert_id, $owner, $title, $data));
+      EventHandler::trigger(__FUNCTION__, array(
+        $insert_id,
+        $owner,
+        $title,
+        $data,
+      ));
 
       return $insert_id;
     }
 
-    self::error('', true);
+    self::error('', TRUE);
   }
 
   /**
    * Create an element, and attach it to a list.
    *
-   * @param integer $list_id
+   * @param int $list_id
    *   The list id to attach the element on.
    * @param mixed $data
    *   The data you wish to save (this can be anything, it's serialized before
@@ -280,7 +282,7 @@ VALUES ("@owner", "@title", "@type", UNIX_TIMESTAMP(), "@data", "@library_code")
    */
   public function createElement($list_id, $data) {
     self::errorCheckArguments(array(
-      'list_id' => $list_id
+      'list_id' => $list_id,
     ));
 
     $result = DB::q('
@@ -291,17 +293,19 @@ VALUES (%list_id, "@data", UNIX_TIMESTAMP(), "@library_code")
       '%list_id' => $list_id,
       '%weight_span' => self::WEIGHT_SPAN,
       '@data' => serialize($data),
-      '@library_code' => $GLOBALS['library_code']
+      '@library_code' => $GLOBALS['library_code'],
     ));
 
     if ($result) {
       $insert_id = DB::insert_id();
 
       // Set the weight and previous column for the newly created element.
-      // We get the "Unsafe statement written to the binary log using statement format since
-      // BINLOG_FORMAT = STATEMENT. The statement is unsafe because it uses a LIMIT clause.
-      // This is unsafe because the set of rows included cannot be predicted. Statement"
-      // warning here, this needs to be fixed. Perhaps a unique index with pe.list_id, pe.weight will fix this.
+      // We get the "Unsafe statement written to the binary log using statement
+      // format since BINLOG_FORMAT = STATEMENT. The statement is unsafe
+      // because it uses a LIMIT clause. This is unsafe because the set of rows
+      // included cannot be predicted. Statement" warning here, this needs to
+      // be fixed. Perhaps a unique index with pe.list_id, pe.weight will fix
+      // this.
       DB::q('
 UPDATE elements e, (
   SELECT
@@ -320,7 +324,7 @@ WHERE e.element_id = %element_id
         '%list_id' => $list_id,
         '%weight_span' => self::WEIGHT_SPAN,
         '%element_id' => $insert_id,
-        '@library_code' => $GLOBALS['library_code']
+        '@library_code' => $GLOBALS['library_code'],
       ));
 
       EventHandler::trigger(__FUNCTION__, array($insert_id, $list_id, $data));
@@ -331,24 +335,24 @@ WHERE e.element_id = %element_id
     switch (DB::errno()) {
       case 1452:
         self::error('No list with that id exists');
-      break;
+        break;
     }
 
-    self::error('', true);
+    self::error('', TRUE);
   }
 
   /**
    * Delete a list.
    *
-   * @param integer $list_id
+   * @param int $list_id
    *   The list id of the list to delete.
    *
-   * @return boolean
+   * @return bool
    *   Deleted or not
    */
   public function deleteList($list_id) {
     self::errorCheckArguments(array(
-      'list_id' => $list_id
+      'list_id' => $list_id,
     ));
 
     $result = DB::q('
@@ -357,7 +361,7 @@ SET status = 0, modified = UNIX_TIMESTAMP(), library_code = "@library_code"
 WHERE list_id = %list_id
     ', array(
       '%list_id' => $list_id,
-      '@library_code' => $GLOBALS['library_code']
+      '@library_code' => $GLOBALS['library_code'],
     ));
 
     if ($result) {
@@ -369,7 +373,7 @@ WHERE list_id = %list_id
       return $result;
     }
 
-    self::error('', true);
+    self::error('', TRUE);
   }
 
   /**
@@ -378,12 +382,12 @@ WHERE list_id = %list_id
    * @param mixed $element_id
    *   The id of the element to delete.
    *
-   * @return boolean
+   * @return bool
    *   Deleted or not
    */
   public function deleteElement($element_id) {
     self::errorCheckArguments(array(
-      'element_id' => $element_id
+      'element_id' => $element_id,
     ));
 
     if (!is_array($element_id)) {
@@ -403,7 +407,7 @@ WHERE
   AND e.status > 0
     ', array(
       '?%element_id' => $element_id,
-      '@library_code' => $GLOBALS['library_code']
+      '@library_code' => $GLOBALS['library_code'],
     ));
 
     if ($result) {
@@ -415,7 +419,7 @@ WHERE
       return $result;
     }
 
-    self::error('', true);
+    self::error('', TRUE);
   }
 
   /**
@@ -423,7 +427,7 @@ WHERE
    *
    * @param string $owner
    *   The owner id.
-   * @param integer $from
+   * @param int $from
    *   Only get lists changed since this unix timestamp
    *
    * @return array
@@ -432,9 +436,9 @@ WHERE
   public function getLists($owner, $from = 0) {
     self::setDefault($from, 0);
     self::errorCheckArguments(array(
-      'owner' => $owner
+      'owner' => $owner,
     ));
-    
+
     self::updateUserProvider($owner);
 
     $result = DB::q('
@@ -445,7 +449,7 @@ WHERE
   AND modified > %from
     ', array(
       '@owner' => $owner,
-      '%from' => $from
+      '%from' => $from,
     ));
 
     if ($result) {
@@ -458,7 +462,7 @@ WHERE
       return $lists;
     }
 
-    self::error('', true);
+    self::error('', TRUE);
   }
 
   /**
@@ -466,7 +470,7 @@ WHERE
    *
    * @param string $owner
    *   The list id to attach the element on.
-   * @param integer $from
+   * @param int $from
    *   Only get elements changed since this unix timestamp
    *
    * @return mixed
@@ -475,9 +479,9 @@ WHERE
   public function getUserElements($owner, $from) {
     self::setDefault($from, 0);
     self::errorCheckArguments(array(
-      'owner' => $owner
+      'owner' => $owner,
     ));
-    
+
     self::updateUserProvider($owner);
 
     $result = DB::q('
@@ -489,7 +493,7 @@ WHERE
 ORDER BY e.list_id, e.status ASC, e.weight
     ', array(
       '@owner' => $owner,
-      '%from' => $from
+      '%from' => $from,
     ));
 
     if ($result) {
@@ -501,22 +505,22 @@ ORDER BY e.list_id, e.status ASC, e.weight
           'list_id' => $row['list_id'],
           'status' => $row['status'],
           'modified' => $row['modified'],
-          'data' => unserialize($row['data'])
+          'data' => unserialize($row['data']),
         );
       }
 
       return $tmp;
     }
 
-    self::error('', true);
+    self::error('', TRUE);
   }
 
   /**
    * Get all the elements in a list.
    *
-   * @param integer $list_id
+   * @param int $list_id
    *   The list id to attach the element on.
-   * @param integer $from
+   * @param int $from
    *   Only get elements changed since this unix timestamp
    *
    * @return array
@@ -525,7 +529,7 @@ ORDER BY e.list_id, e.status ASC, e.weight
   public function getElements($list_id, $from) {
     self::setDefault($from, 0);
     self::errorCheckArguments(array(
-      'list_id' => $list_id
+      'list_id' => $list_id,
     ));
 
     $result = DB::q('
@@ -537,7 +541,7 @@ WHERE
 ORDER BY weight ASC
     ', array(
       '%list_id' => $list_id,
-      '%from' => $from
+      '%from' => $from,
     ));
 
     if ($result) {
@@ -556,15 +560,15 @@ ORDER BY weight ASC
       return $tmp;
     }
 
-    self::error('', true);
+    self::error('', TRUE);
   }
 
   /**
    * Set an element position in the list.
    *
-   * @param integer $element_id
+   * @param int $element_id
    *   ID of the element to position.
-   * @param integer $previous_id
+   * @param int $previous_id
    *   The element that should precede the element moving.
    *   If this is 0, or not set it will be moved to the first element of the
    *   list.
@@ -576,29 +580,26 @@ ORDER BY weight ASC
     self::setDefault($previous_id, 0);
 
     self::errorCheckArguments(array(
-      'element_id' => $element_id
+      'element_id' => $element_id,
     ));
 
-    //
     // Some of these SQL queries are rather complicated, I've tried my best to
     // make them readable, but with no actual code of conduct for SQL it's not
     // that easy.
     //
     // Here's some of the abbreviations used:
     //
-    // e (element):
-    //   The actual element to move.
-    // pe (previous element):
-    //   The new previous element.
-    // ne (next element):
-    //   The element that will become the new next element of the element
-    //   being moved.
-    // ope (old previous element):
-    //   The element that used to be the element being moved previous element.
-    // one (old next element):
-    //   The element that used to be the element being moved next element.
-    //
-
+    // - e (element):
+    // The actual element to move.
+    // - pe (previous element):
+    // The new previous element.
+    // - ne (next element):
+    // The element that will become the new next element of the element
+    // being moved.
+    // - ope (old previous element):
+    // The element that used to be the element being moved previous element.
+    // - one (old next element):
+    // The element that used to be the element being moved next element.
 
     // Place the element at the beginning of the list if $previous_id is 0.
     if ($previous_id === 0) {
@@ -622,7 +623,7 @@ LIMIT 1
       }
 
       if (!empty($data['old_next_id'])) {
-// Moving mid element to the first position.
+        // Moving mid element to the first position.
         $result = DB::q('
 UPDATE elements one, elements ne, elements e
 SET
@@ -643,11 +644,11 @@ WHERE
           '%next_element_id' => $data['first_id'],
           '%next_weight' => self::WEIGHT_SPAN,
           '%old_next_id' => $data['old_next_id'],
-          '@library_code' => $GLOBALS['library_code']
+          '@library_code' => $GLOBALS['library_code'],
         ));
       }
       else {
-// Moving last element to the first position.
+        // Moving last element to the first position.
         $result = DB::q('
 UPDATE elements ne, elements e
 SET
@@ -665,7 +666,7 @@ WHERE
           '%next_element_id' => $data['first_id'],
           '%next_weight' => self::WEIGHT_SPAN,
           '%old_next_id' => $data['old_next_id'],
-          '@library_code' => $GLOBALS['library_code']
+          '@library_code' => $GLOBALS['library_code'],
         ));
       }
 
@@ -690,9 +691,8 @@ ORDER BY ne.weight
 LIMIT 1
     ', array(
       '%previous_id' => $previous_id,
-      '%element_id' => $element_id
+      '%element_id' => $element_id,
     ));
-
 
     // Send an error if the previous id didn't exist.
     // (Note that we also fetch the element into our $data variable).
@@ -700,10 +700,9 @@ LIMIT 1
       return self::error('Unknown previous id (' . $previous_id . ')');
     }
 
-
     if (empty($data['next_id'])) {
-// Moving any element to the last position.
-        $result = DB::q('
+      // Moving any element to the last position.
+      $result = DB::q('
 UPDATE elements one, elements e
 SET
   one.previous = e.previous
@@ -715,19 +714,18 @@ SET
 WHERE
   e.element_id = %element_id
   AND one.previous = e.element_id
-        ', array(
-          '%element_id' => $element_id,
-          '%previous_id' => $previous_id,
-          '%next_weight' => $data['previous_weight'] + self::WEIGHT_SPAN,
-          '@library_code' => $GLOBALS['library_code']
-        ));
+      ', array(
+        '%element_id' => $element_id,
+        '%previous_id' => $previous_id,
+        '%next_weight' => $data['previous_weight'] + self::WEIGHT_SPAN,
+        '@library_code' => $GLOBALS['library_code'],
+      ));
 
-        return $result;
+      return $result;
     }
-
-    else if ($data['next_id'] != $element_id) {
+    elseif ($data['next_id'] != $element_id) {
       if (!empty($data['old_next_id'])) {
-// Moving a mid element to a mid position.
+        // Moving a mid element to a mid position.
         $result = DB::q('
 UPDATE elements ne, elements one, elements e
 SET
@@ -748,11 +746,11 @@ WHERE
           '%previous_id' => $previous_id,
           '%old_next_id' => $data['old_next_id'],
           '%next_weight' => ($data['previous_weight'] + $data['next_weight']) / 2,
-          '@library_code' => $GLOBALS['library_code']
+          '@library_code' => $GLOBALS['library_code'],
         ));
       }
       else {
-// Moving the last element to a mid position.
+        // Moving the last element to a mid position.
         $result = DB::q('
 UPDATE elements ne, elements e
 SET
@@ -769,11 +767,11 @@ WHERE
           '%element_id' => $element_id,
           '%previous_id' => $previous_id,
           '%next_weight' => ($data['previous_weight'] + $data['next_weight']) / 2,
-          '@library_code' => $GLOBALS['library_code']
+          '@library_code' => $GLOBALS['library_code'],
         ));
       }
 
-      // No affected rows, means the $element_id didn't exist
+      // No affected rows, means the $element_id didn't exist.
       if (DB::affected_rows() === 0) {
         return self::error('Unknown element id (' . $element_id . ')');
       }
@@ -785,15 +783,16 @@ WHERE
       }
 
       return $result;
-    } else {
-      return true;
+    }
+    else {
+      return TRUE;
     }
 
-    self::error('', true);
+    self::error('', TRUE);
   }
 
   /**
-   * Load a list
+   * Load a list.
    *
    * @param int $id
    *   The list id
@@ -803,7 +802,7 @@ WHERE
    */
   private function loadList($id) {
 
-    // @todo Static caching? Multiple loading?    
+    // @todo Static caching? Multiple loading?
     $result = DB::q('
 SELECT list_id, type, title, modified, status, data
 FROM lists
@@ -813,5 +812,4 @@ WHERE
       '@owner' => $id,
     ));
   }
-
 }

@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @file
  * This module logs slow requests.
  *
  * This module checks the time it takes for the a to process a request.
@@ -13,26 +14,26 @@
  * right before the OpenList class is called, and stops timing right after
  * the OpenList class is done.
  */
-class SlowLogger extends Module
-{ 
+
+class SlowLogger extends Module {
   public $version = 1;
-  
+
   /**
    * How many seconds is a slow request.
    */
   public $slow_time = 1.25;
-  
-  
+
+
   /**
    * Holds the start time of the request.
    */
   private $start_time = 0;
-  
+
   /**
    * Holds teh arguments of the request.
    */
   private $args = array();
-  
+
   /**
    * Name of the SlowLogger table.
    */
@@ -47,22 +48,24 @@ class SlowLogger extends Module
       'post_method_call' => 'endLog',
     );
   }
-  
+
   /**
    * Before a method is called, this will log the time and arguments.
    */
   protected function startLog($method, &$args) {
-    $this->start_time = microtime(true);
+    $this->start_time = microtime(TRUE);
     $this->args = $args;
   }
-  
+
   /**
-   * After the method has been processed, this checks the execution time, and
-   * if it exceeds the $slow_time, it will log it.
+   * After the method has been processed.
+   *
+   * This checks the execution time, and if it exceeds the $slow_time, it will
+   * log it.
    */
   protected function endLog($method, &$result) {
-    $execution_time = microtime(true) - $this->start_time;
-    
+    $execution_time = microtime(TRUE) - $this->start_time;
+
     if ($execution_time > $this->slow_time) {
       DB::q('
 INSERT INTO !table
@@ -72,7 +75,7 @@ VALUES (!execution_time, "@method", "@arguments")
         '!table' => $this->table,
         '!execution_time' => $execution_time,
         '@method' => $method,
-        '@arguments' => serialize($this->args)
+        '@arguments' => serialize($this->args),
       ));
     }
   }
@@ -95,13 +98,13 @@ CREATE TABLE IF NOT EXISTS !table (
 
     return TRUE;
   }
-  
+
   /**
    * Drop the SlowLogger table.
    */
   protected function _uninstall() {
     DB::q('DROP TABLE IF EXISTS !table', array('!table' => $this->table));
-    
+
     return TRUE;
   }
 }

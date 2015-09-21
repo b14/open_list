@@ -1,25 +1,26 @@
 <?php
 
 /**
+ * @file
  * This class sends the calls through to the the OpenList.
  *
  * It's a simple automated decorator pattern
  *
  * @see http://en.wikipedia.org/wiki/Decorator_pattern
  */
-class OpenListDecorator
-{
-  public $open_list = null;
+
+class OpenListDecorator {
+  public $open_list = NULL;
 
   /**
-   *
+   * Constructor.
    */
   public function __construct() {
     $this->open_list = new OpenList();
   }
 
   /**
-   * 
+   * Call a function.
    */
   public function __call($method, $args) {
     if (method_exists($this->open_list, $method)) {
@@ -27,7 +28,7 @@ class OpenListDecorator
       // This event passes the arguments as a reference, so the modules can
       // change the input.
       EventHandler::trigger('pre_method_call', array($method, &$args));
-      
+
       // Call the OpenList function.
       $result = call_user_func_array(array($this->open_list, $method), $args);
 
@@ -35,7 +36,7 @@ class OpenListDecorator
       // Here the result is passed by reference, so the modules can do last
       // second changes to it.
       EventHandler::trigger('post_method_call', array($method, &$result));
-      
+
       // Insert any debugging information available into the result.
       if (Dev::hasMessages()) {
         $result = array('result' => $result);

@@ -1,31 +1,46 @@
 <?php
-class BaseStats extends Module
-{
+
+/**
+ * @file
+ * Function stats.
+ */
+
+class BaseStats extends Module {
   public $version = 1;
-  
+
   private $memcache_prefix = 'openlistbasestats_';
   protected $interval = 'm_d_H';
-  
+
+  /**
+   * Get the events.
+   */
   public function getEvents() {
     return array(
       'links' => 'links',
       'pre_method_call' => 'call',
     );
   }
-  
+
+  /**
+   * Get the count.
+   */
   public function getFunctionCalls() {
     if (class_exists('Memcached')) {
-      $mc = new \Memcached();// increment is only supported when using BINARY_PROTOCOL.
+      $mc = new \Memcached();
       $mc->setOption(\Memcached::OPT_BINARY_PROTOCOL, TRUE);
       $mc->addServer('localhost', 11211);
-      
+
       $stats = array();
-      
+
       $ip_list = $mc->get($this->memcache_prefix . '__IP_list');
-      if ($ip_list === FALSE) { $ip_list = array(); }
+      if ($ip_list === FALSE) {
+        $ip_list = array();
+      }
       $function_list = $mc->get($this->memcache_prefix . '__Function_list');
-      if ($function_list === FALSE) { $function_list = array(); }
-      
+      if ($function_list === FALSE) {
+        $function_list = array();
+      }
+
       foreach ($ip_list as $ip) {
         $stats[$ip] = array('global' => array());
         foreach ($function_list as $function) {
@@ -40,23 +55,27 @@ class BaseStats extends Module
                 $stats[$ip][$hour] = array();
               }
               $stats[$ip][$hour][$function] = $count;
-            } else {
+            }
+            else {
               break;
             }
           }
         }
       }
-      
+
       foreach ($stats as &$ip) {
         foreach ($ip as &$item) {
           arsort($item, SORT_DESC);
         }
       }
-    
+
       return $stats;
     }
   }
-  
+
+  /**
+   * Get the total usage.
+   */
   public function getTotalUsage($library = FALSE) {
     $sql = '
 SELECT l.type, COUNT(DISTINCT l.list_id) AS lists, COUNT(DISTINCT e.element_id) AS elements
@@ -75,25 +94,27 @@ ORDER BY l.type
     $result = DB::q($sql, array(
       '@library' => $library,
     ));
-    
+
     $lists = array();
-    
+
     if ($result) {
       while ($row = $result->fetch_assoc()) {
-        // return $row;
         $lists[$row['type']] = array(
           'lists' => $row['lists'],
-          'elements' => $row['elements']
+          'elements' => $row['elements'],
         );
       }
     }
-    
+
     return $lists;
   }
-  
+
+  /**
+   * Get the monthly usage.
+   */
   public function getMonthlyUsage($library = FALSE) {
     $years = array();
-    
+
     $sql = '
 SELECT l.type, YEAR(l.created) AS year, MONTH(l.created) AS month, COUNT(DISTINCT l.list_id) AS cnt
 FROM lists l
@@ -109,9 +130,8 @@ ORDER BY YEAR(l.created), MONTH(l.created), l.type
 
     $result = DB::q($sql, array(
       '@library' => $library,
-      // '%from' => $from
     ));
-    
+
     if ($result) {
       while ($row = $result->fetch_assoc()) {
         if (!isset($years[$row['year']])) {
@@ -120,11 +140,11 @@ ORDER BY YEAR(l.created), MONTH(l.created), l.type
         if (!isset($years[$row['year']][$row['month']])) {
           $years[$row['year']][$row['month']] = array();
         }
-        
+
         $years[$row['year']][$row['month']][$row['type']]['lists'] = $row['cnt'];
       }
     }
-    
+
     $sql = '
 SELECT l.type, YEAR(e.created) AS year, MONTH(e.created) AS month, COUNT(DISTINCT e.list_id) AS cnt
 FROM lists l
@@ -140,9 +160,8 @@ ORDER BY YEAR(e.created), MONTH(e.created), l.type
 
     $result = DB::q($sql, array(
       '@library' => $library,
-      // '%from' => $from
     ));
-    
+
     if ($result) {
       while ($row = $result->fetch_assoc()) {
         if (!isset($years[$row['year']])) {
@@ -151,74 +170,80 @@ ORDER BY YEAR(e.created), MONTH(e.created), l.type
         if (!isset($years[$row['year']][$row['month']])) {
           $years[$row['year']][$row['month']] = array();
         }
-        
+
         $years[$row['year']][$row['month']][$row['type']]['elements'] = $row['cnt'];
       }
     }
-    
+
     return $years;
   }
-  
+
+  /**
+   * Page links.
+   */
   protected function links() {
     return array(
-      __CLASS__ => __DIR__ . '/pages/index.php',
-      __CLASS__ . '/functions' => __DIR__ . '/pages/functions.php',
+      __CLASS__ => __DIR__ . '/pages/index.html',
+      __CLASS__ . '/functions' => __DIR__ . '/pages/functions.html',
     );
   }
-  
+
+  /**
+   * When a method is called.
+   */
   protected function call($method, $args) {
     if (class_exists('Memcached')) {
       $mc = new \Memcached();
-      // increment is only supported when using BINARY_PROTOCOL.
+      // Increment is only supported when using BINARY_PROTOCOL.
       $mc->setOption(\Memcached::OPT_BINARY_PROTOCOL, TRUE);
       $mc->addServer('localhost', 11211);
-      
+
       $service = 'openlist';
       $method = $method;
-      
+
       if ($method === 'callModule') {
         $service = $args[0];
         $method = $args[1];
       }
-      
+
       $ip_list = $mc->get($this->memcache_prefix . '__IP_list');
       if ($ip_list === FALSE) {
         $ip_list = array();
       }
-      
+
       // Set IP list if IP missing.
       if (!in_array($_SERVER['REMOTE_ADDR'], $ip_list)) {
         $ip_list[] = $_SERVER['REMOTE_ADDR'];
         $mc->set($this->memcache_prefix . '__IP_list', $ip_list);
       }
-      
+
       // Get function list.
       $function_list = $mc->get($this->memcache_prefix . '__Function_list');
       if ($function_list === FALSE) {
         $function_list = array();
       }
-      
+
       // Set IP list if IP missing.
       if (!in_array($service . '__' . $method, $function_list)) {
         $function_list[] = $service . '__' . $method;
         $mc->set($this->memcache_prefix . '__Function_list', $function_list);
       }
-      
-      // Create key
+
+      // Create key.
       $key = implode('__', array(
         $this->memcache_prefix,
         $_SERVER['REMOTE_ADDR'],
         $service,
-        $method
+        $method,
       ));
-      
-      // Set global 
+
+      // Set global.
       if ($mc->get($key) === FALSE) {
         $mc->set($key, 0);
       }
       $mc->increment($key);
-      
-      // Set current hour
+
+      // Set current hour.
       $key .= '__' . date($this->interval);
       if ($mc->get($key) === FALSE) {
         $mc->set($key, 0);

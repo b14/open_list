@@ -1,11 +1,14 @@
 <?php
+/**
+ * @file
+ * Admin class.
+ */
 
-class Admin
-{
+class Admin {
   /**
    * Set the weights of the elements in a list.
    *
-   * @param integer $list_id
+   * @param int $list_id
    *   The id of the list.
    */
   public static function normalizeElements($list_id, $weight_span = 32) {
@@ -21,15 +24,11 @@ ORDER BY weight;
     ',
     array(
       '%weight_span' => $weight_span,
-      '%list_id' => $list_id
+      '%list_id' => $list_id,
     ),
-    TRUE); // This true tells it to use multi_query
+    TRUE);
 
     // Clear the result list after our multi_query
     DB::clearResults();
-  }
-  
-  public static function check($list_id) {
-    // Make sure previous is correect.
   }
 }

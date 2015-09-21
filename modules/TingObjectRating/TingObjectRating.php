@@ -1,7 +1,11 @@
 <?php
 
-class TingObjectRating extends Module
-{
+/**
+ * @file
+ * Ting Object Ratings module.
+ */
+
+class TingObjectRating extends Module {
   public $version = 1;
 
   /**
@@ -16,13 +20,13 @@ class TingObjectRating extends Module
     return array(
       'createElement' => 'onElementCreated',
       'editElement' => 'onEditElement',
-      'deleteElement' => 'onDeleteElement'
+      'deleteElement' => 'onDeleteElement',
       // 'cron' => 'cron',
     );
   }
 
   /**
-   *
+   * Get popular objects.
    */
   public function getPopular($month, $libcode = FALSE, $limit = 10) {
     $libcode = FALSE;
@@ -30,7 +34,7 @@ class TingObjectRating extends Module
       $libcode_where = '
   AND libcode != "@libcode"';
     }
-    
+
     $last_month = date('Ym', mktime(0, 0, 0, substr($month, 4), 0, substr($month, 0, 4)));
 
     $result = DB::q('
@@ -46,7 +50,8 @@ HAVING
   AVG(rating) > 3
 ORDER BY
   score DESC
-LIMIT 0, !limit', array(
+LIMIT 0, !limit',
+    array(
       '!table' => $this->table,
       '@libcode' => $libcode,
       '%month' => $month,
@@ -55,7 +60,7 @@ LIMIT 0, !limit', array(
     ));
 
     $buffer = array();
-    
+
     while ($row = $result->fetch_assoc()) {
       $buffer[] = $row;
     }
@@ -64,7 +69,7 @@ LIMIT 0, !limit', array(
   }
 
   /**
-   *
+   * Get suggestions, depending on a given object.
    */
   public function getSuggestion($object_id, $owner = FALSE) {
     if ($owner !== FALSE) {
@@ -80,10 +85,11 @@ WHERE
   AND t1.rating = 5
   AND t2.object_id != t1.object_id' . $owner_where . '
 GROUP BY
-  t2.object_id', array(
+  t2.object_id',
+    array(
       '!table' => $this->table,
       '@object_id' => $object_id,
-      '@owner' => $owner
+      '@owner' => $owner,
     ));
 
     $buffer = array();
@@ -91,7 +97,7 @@ GROUP BY
       $buffer[] = $row;
     }
 
-    // Force a positive test result
+    // Force a positive test result.
     if (empty($buffer) && ENABLE_TEST_RESULTS) {
       $buffer[] = "870970-basis:22244566";
     }
@@ -100,7 +106,7 @@ GROUP BY
   }
 
   /**
-   *
+   * Get an object rating.
    */
   public function getRating($object_id) {
     $result = DB::q('
@@ -112,14 +118,14 @@ GROUP BY
   object_id
     ', array(
       '!table' => $this->table,
-      '@object_id' => $object_id
+      '@object_id' => $object_id,
     ));
 
     return (float) $result->fetch_object()->rating;
   }
 
   /**
-   *
+   * Get rated objects from a specific date.
    */
   public function getRated($date = FALSE) {
 
@@ -150,9 +156,9 @@ ORDER BY
 
     return $buffer;
   }
-  
+
   /**
-   *
+   * On element deleted.
    */
   protected function onDeleteElement($element_id) {
     $result = DB::q('
@@ -163,11 +169,11 @@ WHERE
     ', array(
       '?%element_id' => $element_id,
     ));
-    
+
     if ($result) {
       while ($row = $result->fetch_assoc()) {
         $data = unserialize($row['data']);
-        
+
         if ($data['type'] == 'ting_object'
             && isset($data['weight']) && is_numeric($data['weight'])) {
           DB::q('
@@ -190,7 +196,7 @@ WHERE
   }
 
   /**
-   *
+   * On element edited.
    */
   protected function onEditElement($element_id, $data) {
     if ($data['type'] == 'ting_object'
@@ -222,7 +228,7 @@ VALUES ("@owner", "@object_id", %rating, @date, "@library_code")
   }
 
   /**
-   *
+   * On element created.
    */
   protected function onElementCreated($element_id, $list_id, $data) {
     if ($data['type'] == 'ting_object'

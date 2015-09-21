@@ -1,14 +1,13 @@
 <?php
 
-/*
- *
- * SOAP:
- * http://php.net/manual/en/class.soapclient.php
+/**
+ * @file
+ * Client tool.
  */
 
 header("Content-Type: text/html; charset=utf-8");
 
-define('DEFAULT_WSDL', 'http://' . $_SERVER['SERVER_NAME'] .'?wsdl');
+define('DEFAULT_WSDL', 'http://' . $_SERVER['SERVER_NAME'] . '?wsdl');
 define('DEFAULT_LIBRARY_CODE', 'dev_tool');
 
 ini_set("soap.wsdl_cache_enabled", "0");
@@ -17,15 +16,15 @@ ini_set("soap.wsdl_cache_enabled", "0");
 // the same location.
 ob_start();
 
+/**
+ * Simple text cleaner.
+ */
 function clean($text) {
   return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
 }
 
 /**
  * Parses an argument, so it gets typed correct.
- *
- * @param string $argument The argument to parse.
- * @return mixed The argument, typed as the specific type.
  */
 function parseArgument($argument) {
   if ($argument === '') {
@@ -39,27 +38,27 @@ function parseArgument($argument) {
       for ($i = 0, $count = count($arguments); $i < $count; $i++) {
         $argument[$i] = parseArgument($arguments[$i]);
       }
-    break;
+      break;
 
     case 'i]':
       $argument = (int) substr($argument, 2);
-    break;
+      break;
 
     case 's]':
       $argument = (string) substr($argument, 2);
-    break;
+      break;
 
     case 'b]':
       $argument = (boolean) substr($argument, 2);
-    break;
+      break;
 
     case 'j]':
       $argument = json_decode(substr($argument, 2), TRUE);
-    break;
+      break;
 
     case 'p]':
       $argument = unserialize(substr($argument, 2));
-    break;
+      break;
   }
 
   return $argument;
@@ -74,16 +73,16 @@ if (isset($_POST['send'])) {
   for ($i = 0, $count = count($arguments); $i < $count; $i++) {
     $arguments[$i] = parseArgument($arguments[$i]);
   }
-  
+
   if (isset($_POST['local'])) {
     if ($_POST['send'] == 'send') {
       $_COOKIE['developer'] = !isset($_POST['as_user']) ? 'on' : '';
       $_COOKIE['library_code'] = $_POST['library_code'];
-      require_once(dirname(__FILE__) . '/../../settings.php');
-      
+      require_once dirname(__FILE__) . '/../../settings.php';
+
       $GLOBALS['local'] = array($function_name, $arguments);
-      
-      require_once(OPENLIST_ROOT . '/boot.php');
+
+      require_once OPENLIST_ROOT . '/boot.php';
     }
   }
   else {
@@ -100,20 +99,22 @@ if (isset($_POST['send'])) {
           $response['time'] = microtime(TRUE);
           try {
             $response['clean'] = call_user_func_array(array($client, $function_name), $arguments);
-          } catch (Exception $e) {
+          }
+          catch (Exception $e) {
             $trace = $e->getTrace();
             $response['clean'] = array(
               'error' => $e->getMessage(),
-              'call' => $trace[1]['function'] . '(' . implode(', ', $trace[1]['args']) .')'
+              'call' => $trace[1]['function'] . '(' . implode(', ', $trace[1]['args']) . ')',
             );
             $response['clean'] = (string) $e;
           }
           $response['time'] = microtime(TRUE) - $response['time'];
 
-          // Get the raw header and data
+          // Get the raw header and data.
           $response['header'] = $client->__getLastResponseHeaders();
           $response['data'] = $client->__getLastResponse();
-          // Parse the raw XML data with DOMDocuments, to get a formatted output.
+          // Parse the raw XML data with DOMDocuments, to get a formatted
+          // output.
           $response['xml'] = new DOMDocument('1.0', 'utf-8');
           $response['xml']->formatOutput = TRUE;
           $response['xml']->loadXML($response['data']);
@@ -124,15 +125,16 @@ if (isset($_POST['send'])) {
           $request['xml'] = new DOMDocument('1.0', 'utf-8');
           $request['xml']->formatOutput = TRUE;
           $request['xml']->loadXML($request['data']);
-        break;
+          break;
 
         case 'Get functions':
           // Get the list of functions available.
           // The SoapClient reads these from the WSDL file.
           var_dump($client->__getFunctions());
-        break;
+          break;
       }
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       echo $e;
     }
   }
@@ -225,7 +227,7 @@ b]1</pre>
           </div>
           <input id="input-as-user" name="as_user" type="checkbox" <?php print isset($_POST['as_user']) ? ' checked="checked"' : ''; ?> />
         </div>
-        
+
         <div class="form-input">
           <label for="input-as-user">Local: </label>
           <div class="help">
@@ -242,33 +244,35 @@ b]1</pre>
       </form>
     </div>
 
-    <?php if (!empty($debug_messages)) { ?>
+    <?php if (!empty($debug_messages)): ?>
     <div class="section">
       <div class="data">
         <h3>Debug</h3>
         <pre><?php print clean($debug_messages); ?></pre>
       </div>
     </div>
-    <?php } ?>
+    <?php
+endif; ?>
 
-    <?php if (!empty($request)) { ?>
+    <?php if (!empty($request)): ?>
     <div class="section">
       <div class="data closed">
         <h3>Raw Request</h3>
         <pre><?php print clean($request['header']); ?>
 
-<?php print clean($request['xml']->saveXML()); ?></pre>
+        <?php print clean($request['xml']->saveXML()); ?></pre>
       </div>
     </div>
-    <?php } ?>
+    <?php
+endif; ?>
 
-    <?php if (!empty($response)) { ?>
+    <?php if (!empty($response)): ?>
     <div class="section">
       <div class="data closed">
         <h3>Raw response</h3>
         <pre><?php print clean($response['header']); ?>
 
-<?php print clean($response['xml']->saveXML()); ?></pre>
+        <?php print clean($response['xml']->saveXML()); ?></pre>
       </div>
     </div>
 
@@ -278,7 +282,8 @@ b]1</pre>
         <pre><?php var_dump($response['clean']); ?></pre>
       </div>
     </div>
-    <?php } ?>
+    <?php
+endif; ?>
 
   </body>
 </html>

@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @file
  * Reset a user.
  *
  * When resetting a user, all the users lists will have their status = 0.
@@ -9,10 +10,10 @@
  * lists and elements completely. Not just setting it's status but removing
  * them from the database, so be VERY careful with this!
  */
-class ResetUser extends Module
-{ 
+
+class ResetUser extends Module {
   public $version = 1;
-  
+
 
   /**
    * Abstract getEvents().
@@ -20,14 +21,14 @@ class ResetUser extends Module
   public function getEvents() {
     return array();
   }
-  
+
   /**
    * Reset a user.
    *
    * @param string $owner
    *   The user to reset.
    *
-   * @return boolean
+   * @return bool
    *   True or false depending on success.
    */
   public function reset($owner) {
@@ -36,21 +37,21 @@ UPDATE lists
 SET status = 0, modified = UNIX_TIMESTAMP()
 WHERE owner = "@owner"
       ', array('@owner' => $owner));
-    
+
     if ($result) {
       return $result;
     }
-    
+
     return FALSE;
   }
-  
+
   /**
    * Reset a user.
    *
    * @param string $owner
    *   The user to reset.
    *
-   * @return boolean
+   * @return bool
    *   True or false depending on success.
    */
   public function hardReset($owner) {
@@ -62,15 +63,15 @@ FROM
 WHERE l.owner = "@owner";
 DELETE FROM lists
 WHERE owner = "@owner";
-      ', array('@owner' => $owner), TRUE); // (last tru enables multi query)
-      
+      ', array('@owner' => $owner), TRUE);
+
     // Clear the result list after our multi_query
     DB::clearResults();
-    
+
     if ($result) {
       return $result;
     }
-    
+
     return FALSE;
   }
 }

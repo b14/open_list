@@ -1,17 +1,18 @@
 <?php
 
 /**
- *
+ * @file
+ * IP Access
  */
-class IPAccess extends Module
-{ 
+
+class IPAccess extends Module {
   public $version = 1;
-  
+
   private $ipaccess = array(
     '82.103.132.180' => 'server003',
-    '94.18.223.2' => 'b14 local ip'
+    '94.18.223.2' => 'b14 local ip',
   );
-  
+
   /**
    * The table.
    */
@@ -25,24 +26,25 @@ class IPAccess extends Module
       'boot' => 'onBoot',
     );
   }
-  
+
   /**
-   *
+   * Clear the list.
    */
   public function clearList() {
     $result = DB::q('DELETE FROM !table', array(
-      '!table' => $this->table
+      '!table' => $this->table,
     ));
-    
+
     if ($result) {
       return DB::affected_rows();
-    } else {
+    }
+    else {
       return FALSE;
     }
   }
-  
+
   /**
-   * 
+   * On app boot.
    */
   protected function onBoot() {
     if (!isset($this->ipaccess[$_SERVER['REMOTE_ADDR']])) {
@@ -54,16 +56,16 @@ VALUES ("@ip", 1)
     calls = calls + 1
       ', array(
         '!table' => $this->table,
-        '@ip' => $_SERVER['REMOTE_ADDR']
+        '@ip' => $_SERVER['REMOTE_ADDR'],
       ));
-      
+
       header('HTTP/1.1 403 Forbidden');
       exit();
     }
 
     return TRUE;
   }
-  
+
   /**
    * Create the module table on install.
    */
@@ -79,13 +81,13 @@ CREATE TABLE IF NOT EXISTS !table (
 
     return TRUE;
   }
-  
+
   /**
    * Remove the module table on uninstall.
    */
   protected function _uninstall() {
     DB::q('DROP TABLE IF EXISTS !table', array('!table' => $this->table));
-    
+
     return TRUE;
   }
 }
